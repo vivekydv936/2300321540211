@@ -15,7 +15,7 @@ This ensures:
 import heapq
 from datetime import datetime
 
-# Type weights: Placement > Result > Event
+
 TYPE_WEIGHTS = {
     "Placement": 3,
     "Result": 2,

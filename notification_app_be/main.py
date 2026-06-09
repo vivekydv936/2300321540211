@@ -14,7 +14,7 @@ import uvicorn
 from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-# Ensure project root is on sys.path for logging_middleware import
+
 PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -22,7 +22,7 @@ if PROJECT_ROOT not in sys.path:
 from logging_middleware.logger import Log
 from priority_inbox import get_top_n_notifications, PriorityInbox, compute_priority_score
 
-# ── App Configuration ────────────────────────────────────────────────
+
 
 
 @asynccontextmanager
@@ -54,7 +54,6 @@ def _read_access_token() -> str:
     raise KeyError("ACCESS_TOKEN not found in .env")
 
 
-# ── Data Fetching ────────────────────────────────────────────────────
 
 async def fetch_notifications() -> list[dict]:
     """Fetch notification data from the evaluation service."""
@@ -82,7 +81,7 @@ async def fetch_notifications() -> list[dict]:
     return notifications
 
 
-# ── Exception Handler ────────────────────────────────────────────────
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -97,7 +96,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 
-# ── Routes ───────────────────────────────────────────────────────────
+
 
 @app.get("/health")
 async def health_check():
@@ -138,19 +137,18 @@ async def get_priority_notifications(
     await Log("backend", "info", "route",
               f"GET /notifications/priority?n={n} endpoint called")
 
-    # Fetch notifications from evaluation service
+   
     notifications = await fetch_notifications()
 
     await Log("backend", "debug", "service",
               f"Computing priority inbox: top {n} from {len(notifications)} notifications")
 
-    # Compute top N using heap-based algorithm
     top_notifications = get_top_n_notifications(notifications, n=n)
 
     await Log("backend", "info", "service",
               f"Priority inbox computed: returning top {len(top_notifications)} notifications")
 
-    # Log the top result for observability
+    
     if top_notifications:
         top = top_notifications[0]
         await Log("backend", "debug", "service",
@@ -174,7 +172,7 @@ async def get_notification_by_id(notification_id: str):
 
     for notif in notifications:
         if notif.get("ID") == notification_id:
-            # Enrich with priority score
+            
             score = compute_priority_score(notif)
             await Log("backend", "info", "controller",
                       f"Found notification {notification_id}: type={notif.get('Type')}")
@@ -190,7 +188,6 @@ async def get_notification_by_id(notification_id: str):
     raise HTTPException(status_code=404, detail="Notification not found")
 
 
-# ── Entry Point ──────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8002, reload=True)

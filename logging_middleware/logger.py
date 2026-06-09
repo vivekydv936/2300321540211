@@ -1,8 +1,3 @@
-"""
-Reusable logging middleware module.
-Sends structured log events to the evaluation service API.
-"""
-
 from enum import Enum
 from pathlib import Path
 
@@ -11,8 +6,6 @@ import httpx
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 BASE_URL = "http://4.224.186.213/evaluation-service"
 
-
-# ── Strict enums for input validation ────────────────────────────────
 
 class Stack(str, Enum):
     BACKEND = "backend"
@@ -42,10 +35,7 @@ class Package(str, Enum):
     UTILS = "utils"
 
 
-# ── Helpers ──────────────────────────────────────────────────────────
-
 def _read_access_token() -> str:
-    """Read ACCESS_TOKEN from the project .env file."""
     if not ENV_FILE.exists():
         raise FileNotFoundError(f".env file not found at {ENV_FILE}")
 
@@ -60,10 +50,6 @@ def _read_access_token() -> str:
 
 
 def _validate_input(value: str, enum_cls: type[Enum], field_name: str) -> str:
-    """
-    Validate that a value is lowercase and matches an allowed enum member.
-    Raises ValueError with a descriptive message on failure.
-    """
     if value != value.lower():
         raise ValueError(
             f"'{field_name}' must be lowercase. Got '{value}'."
@@ -79,33 +65,12 @@ def _validate_input(value: str, enum_cls: type[Enum], field_name: str) -> str:
     return value
 
 
-# ── Core logging function ────────────────────────────────────────────
-
 async def log_event(
     stack: str,
     level: str,
     package: str,
     message: str,
 ) -> dict:
-    """
-    Send a structured log event to the evaluation service.
-
-    Args:
-        stack:   Must be 'backend'.
-        level:   One of 'debug', 'info', 'warn', 'error', 'fatal'.
-        package: One of 'cache', 'controller', 'cron_job', 'db', 'domain',
-                 'handler', 'repository', 'route', 'service', 'auth',
-                 'config', 'middleware', 'utils'.
-        message: Free-text log message.
-
-    Returns:
-        The JSON response body from the API.
-
-    Raises:
-        ValueError: If any input fails validation.
-        httpx.HTTPStatusError: If the API returns a non-success status.
-    """
-    # Validate inputs strictly before making any network call
     _validate_input(stack, Stack, "stack")
     _validate_input(level, Level, "level")
     _validate_input(package, Package, "package")
@@ -113,14 +78,11 @@ async def log_event(
     if not message or not message.strip():
         raise ValueError("'message' must be a non-empty string.")
 
-    # Truncate message to 48 characters to comply with remote server limits
     if len(message) > 48:
         message = message[:45] + "..."
 
-    # Read token
     access_token = _read_access_token()
 
-    # Build request
     url = f"{BASE_URL}/logs"
     headers = {"Authorization": f"Bearer {access_token}"}
     payload = {
@@ -130,7 +92,6 @@ async def log_event(
         "message": message,
     }
 
-    # Fire async POST
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(url, json=payload, headers=headers)
@@ -149,5 +110,4 @@ async def log_event(
         return {"error": "network_error", "detail": str(exc)}
 
 
-# Alias for doc-compliant usage: Log(stack, level, package, message)
 Log = log_event

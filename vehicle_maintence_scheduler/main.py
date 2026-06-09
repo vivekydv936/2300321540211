@@ -15,14 +15,14 @@ import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 
-# Ensure project root is on sys.path for logging_middleware import
+
 PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from logging_middleware.logger import Log
 
-# ── App Configuration ────────────────────────────────────────────────
+
 
 
 @asynccontextmanager
@@ -54,7 +54,7 @@ def _read_access_token() -> str:
     raise KeyError("ACCESS_TOKEN not found in .env")
 
 
-# ── Data Fetching ────────────────────────────────────────────────────
+
 
 async def fetch_depots() -> list[dict]:
     """Fetch depot data from the evaluation service."""
@@ -100,7 +100,7 @@ async def fetch_vehicles() -> list[dict]:
     return vehicles
 
 
-# ── Knapsack Algorithm (0/1 Dynamic Programming) ────────────────────
+
 
 def knapsack_01(items: list[dict], capacity: int) -> list[dict]:
     """
@@ -120,8 +120,6 @@ def knapsack_01(items: list[dict], capacity: int) -> list[dict]:
     if n == 0 or capacity <= 0:
         return []
 
-    # Build DP table
-    # dp[i][w] = max impact using first i items with capacity w
     dp = [[0] * (capacity + 1) for _ in range(n + 1)]
 
     for i in range(1, n + 1):
@@ -138,7 +136,7 @@ def knapsack_01(items: list[dict], capacity: int) -> list[dict]:
                 if take > dp[i][w]:
                     dp[i][w] = take
 
-    # Backtrack to find selected items
+  
     selected = []
     w = capacity
     for i in range(n, 0, -1):
@@ -150,7 +148,7 @@ def knapsack_01(items: list[dict], capacity: int) -> list[dict]:
     return selected
 
 
-# ── Exception Handler ────────────────────────────────────────────────
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -165,7 +163,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 
-# ── Routes ───────────────────────────────────────────────────────────
+
 
 @app.get("/health")
 async def health_check():
@@ -200,11 +198,11 @@ async def get_schedule(depot_id: int):
     """
     await Log("backend", "info", "route", f"GET /schedule/{depot_id} endpoint called")
 
-    # Fetch data from evaluation service
+    
     depots = await fetch_depots()
     vehicles = await fetch_vehicles()
 
-    # Find the requested depot
+   
     depot = None
     for d in depots:
         if d["ID"] == depot_id:
@@ -220,17 +218,15 @@ async def get_schedule(depot_id: int):
     await Log("backend", "info", "service",
               f"Depot {depot_id}: capacity={capacity}h, tasks={len(vehicles)}")
 
-    # Run knapsack algorithm
     await Log("backend", "debug", "service",
               f"Running 0/1 Knapsack DP: n={len(vehicles)}, W={capacity}")
 
     selected = knapsack_01(vehicles, capacity)
 
-    # Calculate totals
+    
     total_duration = sum(v["Duration"] for v in selected)
     total_impact = sum(v["Impact"] for v in selected)
 
-    # Determine unselected vehicles
     selected_ids = {v["TaskID"] for v in selected}
     unselected = [v for v in vehicles if v["TaskID"] not in selected_ids]
 
