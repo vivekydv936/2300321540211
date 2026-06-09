@@ -2,6 +2,12 @@
 
 A collection of backend microservices built with **FastAPI** (Python), featuring centralized logging middleware and production-grade architecture.
 
+## Assignment Deliverables
+- **Vehicle Maintenance Scheduler**: Full implementation in `vehicle_maintence_scheduler/`
+- **Notification App Backend**: Priority inbox implementation in `notification_app_be/`
+- **System Design Document**: Stages 1-5 answered in `notification_system_design.md`
+- **Screenshots**: Execution proofs available in the `Screenshots/` directory.
+
 ## Project Structure
 
 ```
